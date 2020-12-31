@@ -1,8 +1,11 @@
+//Environment Variable: stores data we do not want to be disclosed to the public
+require('dotenv').config()
 //jshint esversion:
 const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
+const encrypt = require('mongoose-encryption');
 const app = express();
 
 //render public folder
@@ -15,10 +18,14 @@ app.use(bodyParser.urlencoded({extended:true}));
 //connecting to mongodb locally
 mongoose.connect('mongodb://localhost:27017/test', {useNewUrlParser: true, useUnifiedTopology: true});
 //user schema
-const userSchema = {
+const userSchema = new mongoose.Schema({
     email: String,
     password: String
-}
+});
+
+//This will encryp entire DB. However, we only want to encrypt password. Specify that by using encruyptedField
+userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password']})
+
 //Creating a model
 const User = mongoose.model('User',userSchema);
 
@@ -65,6 +72,7 @@ app.post('/login', (req,res)=>{
             //if there is a object of foundUser which is not null
             if(foundUser){
                 if(foundUser.password === password){
+                    console.log(password)
                     //if user's password matches the password in database then render secrets page
                     res.render('secrets');
                 }
